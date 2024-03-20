@@ -16,12 +16,14 @@ function deserializeObject(obj: ISerialized, context: SerializableContext): any 
         if (!type) {
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
+        const meta = SerializableContext.getMeta(obj.typename);
         const instance = new type();
         context.add(instance, obj.id);
-        for (const key in obj.data) {
+        const keys = meta ? meta.getDeserializableKeys(obj.data!) : Object.keys(obj.data!);
+        for (const key of keys) {
             context.parent = instance;
             context.parentKey = key;
-            instance[key] = deserialize(obj.data[key], context);
+            instance[key] = deserialize(obj.data![key], context);
         }
         return instance;
     }
@@ -51,10 +53,12 @@ function deserializeArray(obj: ISerialized, context: SerializableContext): any {
         if (!type) {
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
+        const meta = SerializableContext.getMeta(obj.typename);
         const instance = new type();
         context.add(instance, obj.id);
         if (obj.data) {
-            for (const key in obj.data) {
+            const keys = meta ? meta.getDeserializableKeys(obj.data) : Object.keys(obj.data);
+            for (const key of keys) {
                 context.parent = obj.data
                 context.parentKey = key;
                 instance[key] = deserialize(obj.data[key], context);

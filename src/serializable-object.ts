@@ -1,19 +1,26 @@
 export type ClassConstructor<T> = new (...args: any[]) => T;
-// export const serializableTypes: ClassConstructor<ISerializable>[] = [];
+export type SerializableType ='Object' | 'Array' | 'Function' | string;
+export type SerializableDataType = IDeserializable | string | number | boolean | null;
 
 export interface ISerialized {
     id: string;
-    typename: string;
-    data?: any;
-    array?: any[];
+    typename: SerializableType;
+    data?: {
+        [key: string]: SerializableDataType;
+    };
+    array?: SerializableDataType[];
+    param?: SerializableDataType[];
 }
 
 export interface ISerializedRef {
     id: string;
 }
 
-export type IDeserializable = ISerialized | ISerializedRef;
-
-export interface ISerializable{
+export interface ISerializedFunction {
     id: string;
+    typename: 'Function';
+    data: string;
+    param: SerializableDataType[];
 }
+
+export type IDeserializable = ISerialized | ISerializedRef | ISerializedFunction;

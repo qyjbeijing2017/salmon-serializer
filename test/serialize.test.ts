@@ -72,14 +72,14 @@ describe('serialize simple', () => {
                         str: `4`,
                         bool: false,
                     }
-                } as ISerialized
+                }
             }
         }
 
         const serialized = serialize(objectOnTest);
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
-        serializedOnTest.data.object2.id = serialized.data.object2.id;
+        (serializedOnTest.data!.object2 as ISerialized).id = serialized.data['object2'].id;
 
         expect(json).toBe(JSON.stringify(serializedOnTest));
     })
@@ -106,7 +106,7 @@ describe('serialize simple', () => {
                         id: `ob2`,
                         num: 2,
                     }
-                } as ISerialized
+                }
             }
         }
 
@@ -147,7 +147,7 @@ describe('serialize simple', () => {
                         id: `ob1`,
                         sth: `testObject`,
                     }
-                } as ISerialized,
+                },
                 testInstance: {
                     id: ``,
                     typename: TestSerializationClass2.name,
@@ -156,7 +156,7 @@ describe('serialize simple', () => {
                         str: `str4`,
                         bool: false,
                     }
-                } as ISerialized
+                }
             }
         }
 
@@ -165,7 +165,7 @@ describe('serialize simple', () => {
         const serialized = serialize(instanceOnTest);
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
-        serializedOnTest.data.testInstance.id = serialized.data.testInstance.id;
+        (serializedOnTest.data!.testInstance as ISerialized).id = serialized.data.testInstance.id;
         SerializableContext.removeType(TestSerializationClass, TestSerializationClass2);
 
         expect(json).toBe(JSON.stringify(serializedOnTest));

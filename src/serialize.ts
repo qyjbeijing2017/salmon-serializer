@@ -1,15 +1,17 @@
 import { SerializableContext } from "./serializable-context";
-import { ISerialized, ISerializedRef } from "./serializable-object";
+import { ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
 
 
 function serializeArrayInstance(obj: Array<any>, context: SerializableContext): ISerialized {
+    const meta = SerializableContext.getMeta(obj.constructor.name);
     const [id] = context.add(obj, (obj as any).id);
     let data: any = undefined;
-    let array: any[]| undefined = undefined;
+    let array: any[] | undefined = undefined;
     let index = 0;
-    for (const key in obj) {
+    const keys = meta ? meta.getSerializableKeys(obj) : Object.keys(obj);
+    for (const key of keys) {
         if (index < obj.length) {
-            if(!array) array = [];
+            if (!array) array = [];
             context.parent = obj;
             context.parentKey = index;
             array[index] = serialize(obj[index], context);
@@ -19,7 +21,7 @@ function serializeArrayInstance(obj: Array<any>, context: SerializableContext): 
         context.parent = obj;
         context.parentKey = key;
         if (!data) data = {};
-        data[key] = serialize(obj[key], context);
+        data[key] = serialize((obj as any)[key], context);
     }
     return {
         id,
@@ -30,9 +32,11 @@ function serializeArrayInstance(obj: Array<any>, context: SerializableContext): 
 }
 
 function serializeObject(obj: any, context: SerializableContext): ISerialized {
+    const meta = SerializableContext.getMeta(obj.constructor.name);
     const [id] = context.add(obj, obj.id);
     const data: any = {};
-    for (const key in obj) {
+    const keys = meta ? meta.getSerializableKeys(obj) : Object.keys(obj);
+    for (const key of keys) {
         context.parent = obj;
         context.parentKey = key;
         data[key] = serialize(obj[key], context);
