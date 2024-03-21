@@ -1,6 +1,16 @@
 import { SerializableContext } from "./serializable-context";
-import { SerializableMode } from "./serializable-meta";
-import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
+import { SerializableMeta, SerializableMode } from "./serializable-meta";
+import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef, SerializableType } from "./serializable-object";
+
+async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any> | undefined) {
+    if(params === undefined) return [];
+    return await Promise.all(params.map(async (param, index) => {
+        if(meta?.paramMeta[index]?.toPlain) {
+            return meta.paramMeta[index].toPlain!(param, context);
+        }
+        return deserialize(param, context)
+    }));
+}
 
 async function deserializeObject(obj: ISerialized, context: SerializableContext): Promise<any> {
     if (obj.typename === 'Object') {
@@ -18,7 +28,7 @@ async function deserializeObject(obj: ISerialized, context: SerializableContext)
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
         const meta = SerializableContext.getMeta(obj.typename);
-        const params = await Promise.all(obj.param ? obj.param.map((param) => deserialize(param, context)) : []);
+        const params = await deserializeParams(obj.param, context, meta);
         const instance = new type(...params);
         context.add(instance, obj.id);
         const keys = meta ? meta.getDeserializableKeys(obj.data!) : Object.keys(obj.data!);
@@ -56,7 +66,7 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
         const meta = SerializableContext.getMeta(obj.typename);
-        const params = await Promise.all(obj.param ? obj.param.map((param) => deserialize(param, context)) : []);
+        const params =  await deserializeParams(obj.param, context, meta);
         const instance = new type(...params);
         context.add(instance, obj.id);
         if (obj.data) {
@@ -91,7 +101,7 @@ async function deserializeFunction(obj: ISerializedFunction, context: Serializab
         if (!fieldMeta) return func;
         const mode = fieldMeta.mode;
         if (mode & SerializableMode.RUN_ON_DESERIALIZE) {
-            const params = obj.param ? await Promise.all(obj.param.map((param) => deserialize(param, context))) : [];
+            const params = await deserializeParams(obj.param, context, meta);
             const instance = context.parent;
             func.apply(instance, params);
         }

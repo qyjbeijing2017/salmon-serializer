@@ -3,6 +3,8 @@ import { SerializableFieldType, SerializableMode } from "../serializable-meta";
 
 export interface SerializableFieldOptions {
     mode: SerializableMode;
+    toPlain: (param: any, context: SerializableContext) => Promise<any>;
+    toClass: (param: any, context: SerializableContext) => Promise<any>;
 }
 
 export function SerializeField<T>(options: Partial<SerializableFieldOptions> = {}) {
@@ -25,5 +27,7 @@ export function SerializeField<T>(options: Partial<SerializableFieldOptions> = {
                 fieldMeta.type |= SerializableFieldType.SETTER;
             }
         }
+        fieldMeta.toPlain = options.toPlain;
+        fieldMeta.toClass = options.toClass;
     }
 }

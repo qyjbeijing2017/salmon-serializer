@@ -13,14 +13,14 @@ export function SerializeParam<T>(val: T | ((context: SerializableContext) => T)
             const meta = SerializableContext.ensureMeta(typename);
             const fieldMeta = meta.ensureFieldMeta(key.toString());
             fieldMeta.paramMeta[parameterIndex] = new SerializableParamMeta(val);
-            if (options.toClass) fieldMeta.paramMeta[parameterIndex].toClass = options.toClass;
-            if (options.toPlain) fieldMeta.paramMeta[parameterIndex].toPlain = options.toPlain;
+            fieldMeta.paramMeta[parameterIndex].toClass = options.toClass;
+            fieldMeta.paramMeta[parameterIndex].toPlain = options.toPlain;
         } else {
             const typename = (target as any).name;
             const meta = SerializableContext.ensureMeta(typename);
             meta.paramMeta[parameterIndex] = new SerializableParamMeta(val);
-            if (options.toClass) meta.paramMeta[parameterIndex].toClass = options.toClass;
-            if (options.toPlain) meta.paramMeta[parameterIndex].toPlain = options.toPlain;
+            meta.paramMeta[parameterIndex].toClass = options.toClass;
+            meta.paramMeta[parameterIndex].toPlain = options.toPlain;
         }
     }
 };
