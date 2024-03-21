@@ -19,8 +19,8 @@ export interface ISerializedRef {
 export interface ISerializedFunction {
     id: string;
     typename: 'Function';
-    data: string;
-    param: SerializableDataType[];
+    data?: SerializableDataType;
+    param?: SerializableDataType[];
 }
 
 export type IDeserializable = ISerialized | ISerializedRef | ISerializedFunction;

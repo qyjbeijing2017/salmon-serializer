@@ -1,3 +1,4 @@
+import { SerializableContext } from "./serializable-context";
 import { ClassConstructor, ISerialized, SerializableDataType } from "./serializable-object";
 
 export enum SerializableMode {
@@ -18,12 +19,16 @@ export enum SerializableFieldType {
 export class SerializableFieldMeta {
     mode: SerializableMode = SerializableMode.TO_PLAIN_AND_CLASS;
     type: SerializableFieldType = SerializableFieldType.PROPERTY;
+    paramMeta: SerializableParamMeta<any>[] = [];
 }
+
+export type SerializableParamMeta<T> = T | ((context: SerializableContext) => T);
 
 export class SerializableMeta<T extends Object> {
     type?: ClassConstructor<T>;
     mode: SerializableMode = SerializableMode.TO_PLAIN_AND_CLASS;
     readonly keysMeta: Map<string, SerializableFieldMeta> = new Map();
+    paramMeta: SerializableParamMeta<any>[] = [];
 
     ensureFieldMeta(key: string) {
         let meta = this.keysMeta.get(key);

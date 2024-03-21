@@ -5,6 +5,7 @@ import { SerializableContext } from '../src/serializable-context';
 import { SerializableMode } from '../src/serializable-meta';
 import { ISerialized } from '../src/serializable-object';
 import { serialize } from '../src/serialize';
+import { SerializeParam } from '../src/decorator/serialize-param';
 
 describe(`simple decorator`, () => {
     test(`@Serializable`, () => {
@@ -99,6 +100,77 @@ describe(`simple decorator`, () => {
     });
 
     test('function', () => {
-        
+
+        @Serializable()
+        class ClassUnderTestRef {
+            id: string = 'testRef';
+            testNumber: number = 2;
+        }
+
+        @Serializable({ mode: SerializableMode.IGNORE })
+        class ClassUnderTest {
+            id: string = 'test';
+            testValue: string = 'test1';
+            add: number = 0;
+            @SerializeField()
+            ref: ClassUnderTestRef;
+
+            constructor(
+                @SerializeParam('test2')
+                test: string,
+                @SerializeParam(ctx => ctx.instance.ref)
+                ref: ClassUnderTestRef
+            ) {
+                this.testValue = test;
+                this.ref = ref;
+            }
+
+            @SerializeField()
+            testRef(
+                @SerializeParam(3)
+                num: number,
+                @SerializeParam(ctx => ctx.parent.ref)
+                ref: ClassUnderTestRef
+            ) {
+                this.add = num + ref.testNumber;
+                return this.add;
+            }
+        }
+        const serializedUnderTest: ISerialized = {
+            id: `test`,
+            typename: ClassUnderTest.name,
+            param: [
+                'test2',
+                {
+                    id: 'testRef',
+                    typename: ClassUnderTestRef.name,
+                    data: {
+                        id: 'testRef'
+                    }
+                }
+            ],
+            data: {
+                ref: {
+                    id: 'testRef',
+                },
+                testRef: {
+                    id: 'testRef',
+                    typename: "Function",
+                    data: 5,
+                    param: [
+                        3,
+                        {
+                            id: 'testRef',
+                        }
+                    ]
+                }
+            },
+        }
+        const instanceUnderTest = new ClassUnderTest('test3', new ClassUnderTestRef());
+
+        const serialized = serialize(instanceUnderTest);
+        SerializableContext.removeType(ClassUnderTest);
+
+        expect(serialized).toEqual(serializedUnderTest);
     });
 });

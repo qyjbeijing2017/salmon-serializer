@@ -39,6 +39,7 @@ export class SerializableContext {
 
     parent: any;
     parentKey: string | number | Symbol | null;
+    instance?: any;
     objectContainer: Map<string, any>;
     constructor(options: Partial<ISerializableContextOptions> = {}) {
         this.parent = options.parent ?? null;
