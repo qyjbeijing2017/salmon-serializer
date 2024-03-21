@@ -5,8 +5,8 @@ import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef, Seri
 async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any> | undefined) {
     if(params === undefined) return [];
     return await Promise.all(params.map(async (param, index) => {
-        if(meta?.paramMeta[index]?.toPlain) {
-            return meta.paramMeta[index].toPlain!(param, context);
+        if(meta?.paramMeta[index]?.toClass) {
+            return meta.paramMeta[index].toClass!(param, context);
         }
         return deserialize(param, context)
     }));
@@ -35,7 +35,12 @@ async function deserializeObject(obj: ISerialized, context: SerializableContext)
         for (const key of keys) {
             context.parent = instance;
             context.parentKey = key;
-            instance[key] = await deserialize(obj.data![key], context);
+            const fieldMeta = meta?.getFieldMeta(key);
+            if (fieldMeta?.toClass) {
+                instance[key] = await fieldMeta.toClass(obj.data![key], context);
+            }else {
+                instance[key] = await deserialize(obj.data![key], context);
+            }
         }
         return instance;
     }
@@ -74,7 +79,12 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
             for (const key of keys) {
                 context.parent = instance;
                 context.parentKey = key;
-                instance[key] = await deserialize(obj.data[key], context);
+                const fieldMeta = meta?.getFieldMeta(key);
+                if (fieldMeta?.toClass) {
+                    instance[key] = await fieldMeta.toClass(obj.data![key], context);
+                }else {
+                    instance[key] = await deserialize(obj.data![key], context);
+                }
             }
         }
 
