@@ -115,9 +115,10 @@ async function runningFunction(obj: Function, context: SerializableContext, seri
             }
             return param.findDefault;
         });
-        serialized.param = await Promise.all(invokeParams.map((param) => {
-            if (param.toPlain) {
-                return param.toPlain(param, context);
+        serialized.param = await Promise.all(invokeParams.map((param, index) => {
+            const meta = paramMeta[index];
+            if (meta.toPlain) {
+                return meta.toPlain(param, context);
             }
             return serialize(param, context);
         }));

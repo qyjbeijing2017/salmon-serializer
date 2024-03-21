@@ -123,6 +123,7 @@ describe('deserialize simple', () => {
         const deserialized = await deserialize<TestSerializationClass>(serializedOnTest);
         SerializableContext.removeType(TestSerializationClass, TestSerializationClass2);
 
+        expect(deserialized).toBeInstanceOf(TestSerializationClass);
         expect(deserialized).toEqual(instanceOnTest);
         expect(deserialized.constructor).toBe(TestSerializationClass);
         expect(deserialized.testInstance.constructor).toBe(TestSerializationClass2)
