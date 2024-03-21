@@ -211,7 +211,52 @@ describe(`simple decorator`, () => {
     })
 
     test('constructor', () => {
-        
+        @Serializable()
+        class ParentUnderTest {
+            id: string = 'parent';
+            child: ChildUnderTest;
+            constructor() {
+                this.child = new ChildUnderTest(this);
+            }
+        }
+        @Serializable()
+        class ChildUnderTest {
+            id: string = 'child';
+            @SerializeField({ mode: SerializableMode.IGNORE })
+            parent: ParentUnderTest;
+            constructor(
+                @SerializeParam(ctx => ctx.parent)
+                parent: ParentUnderTest
+            ) {
+                this.parent = parent;
+            }
+        }
+        const serializedUnderTest: ISerialized = {
+            id: `parent`,
+            typename: ParentUnderTest.name,
+            data: {
+                id: `parent`,
+                child: {
+                    id: 'child',
+                    typename: ChildUnderTest.name,
+                    param: [{
+                        id: 'parent',
+                    }],
+                    data: {
+                        id: 'child',
+                    }
+                }
+            }
+        }
+        const instanceUnderTest = new ParentUnderTest();
+
+        const serialized = serialize(instanceUnderTest);
+        const deserialized = deserialize<ParentUnderTest>(serialized);
+        SerializableContext.removeType(ParentUnderTest);
+        SerializableContext.removeType(ChildUnderTest);
+
+        expect(serialized).toEqual(serializedUnderTest);
+        expect(deserialized.child.parent).toBe(deserialized);
     });
 
 });
