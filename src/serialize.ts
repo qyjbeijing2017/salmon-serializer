@@ -82,7 +82,7 @@ function serializeRef(obj: any, context: SerializableContext): ISerializedRef {
 
 
 function runningFunction(obj: Function, context: SerializableContext, serialized: ISerializedFunction) {
-    const meta = SerializableContext.getMeta(context.parent.constructor.name);
+    const meta = context.parent.constructor ? SerializableContext.getMeta(context.parent.constructor.name): undefined;
     if (context.parent && context.parentKey) {
         if (!meta) return;
         const fieldMeta = meta.getFieldMeta(context.parentKey.toString());
@@ -103,7 +103,12 @@ function runningFunction(obj: Function, context: SerializableContext, serialized
 }
 
 function serializeFunction(obj: Function, context: SerializableContext): ISerializedFunction {
-    const meta = SerializableContext.getMeta(context.parent.constructor.name);
+
+    if(obj.name.startsWith('bound ')) {
+        throw new Error('Cannot serialize bound function');
+    }
+
+    const meta = context.parent.constructor ? SerializableContext.getMeta(context.parent.constructor.name) : undefined;
     const metaField = meta?.getFieldMeta(context.parentKey as string);
     const [id] = context.add(obj, (obj as any).id);
     const output: ISerializedFunction = {

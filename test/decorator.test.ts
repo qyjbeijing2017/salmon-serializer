@@ -6,6 +6,7 @@ import { SerializableMode } from '../src/serializable-meta';
 import { ISerialized } from '../src/serializable-object';
 import { serialize } from '../src/serialize';
 import { SerializeParam } from '../src/decorator/serialize-param';
+import EventEmitter from 'events';
 
 describe(`simple decorator`, () => {
     test(`@Serializable`, () => {
@@ -177,7 +178,7 @@ describe(`simple decorator`, () => {
                 a: number,
                 @SerializeParam(ctx => ctx.parent.number1)
                 b: number
-            ) { console.log(`invoked by serialize`,a, b); return a * b; }
+            ) { return a * b; }
 
             constructor() {
                 (this.mul as any).id = 'testFun';
@@ -194,7 +195,7 @@ describe(`simple decorator`, () => {
                     id: 'testFun',
                     typename: 'Function',
                     paramDefine: ['a', 'b'],
-                    body: ' console.log(`invoked by serialize`, a, b); return a * b; ',
+                    body: ' return a * b; ',
                     param: [3, 2],
                     data: 6,
                 },
@@ -208,4 +209,9 @@ describe(`simple decorator`, () => {
         expect(serialized).toEqual(serializedUnderTest);
         expect(deserialized.mul(3, 2)).toBe(6);
     })
+
+    test('constructor', () => {
+        
+    });
+
 });
