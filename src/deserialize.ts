@@ -2,14 +2,14 @@ import { SerializableContext } from "./serializable-context";
 import { SerializableMode } from "./serializable-meta";
 import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
 
-function deserializeObject(obj: ISerialized, context: SerializableContext): any {
+async function deserializeObject(obj: ISerialized, context: SerializableContext): Promise<any> {
     if (obj.typename === 'Object') {
         const data: any = {};
         context.add(data, obj.id);
         for (const key in obj.data) {
             context.parent = data;
             context.parentKey = key;
-            data[key] = deserialize(obj.data[key], context);
+            data[key] = await deserialize(obj.data[key], context);
         }
         return data;
     } else {
@@ -18,20 +18,20 @@ function deserializeObject(obj: ISerialized, context: SerializableContext): any 
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
         const meta = SerializableContext.getMeta(obj.typename);
-        const params = obj.param ? obj.param.map((param) => deserialize(param, context)) : [];
+        const params = await Promise.all(obj.param ? obj.param.map((param) => deserialize(param, context)) : []);
         const instance = new type(...params);
         context.add(instance, obj.id);
         const keys = meta ? meta.getDeserializableKeys(obj.data!) : Object.keys(obj.data!);
         for (const key of keys) {
             context.parent = instance;
             context.parentKey = key;
-            instance[key] = deserialize(obj.data![key], context);
+            instance[key] = await deserialize(obj.data![key], context);
         }
         return instance;
     }
 }
 
-function deserializeArray(obj: ISerialized, context: SerializableContext): any[] {
+async function deserializeArray(obj: ISerialized, context: SerializableContext): Promise<any[]> {
     if (obj.typename === 'Array') {
         const data: any[] = [];
         context.add(data, obj.id);
@@ -39,15 +39,15 @@ function deserializeArray(obj: ISerialized, context: SerializableContext): any[]
             for (const key in obj.data) {
                 context.parent = data;
                 context.parentKey = key;
-                (data as any)[key] = deserialize(obj.data[key], context);
+                (data as any)[key] = await deserialize(obj.data[key], context);
             }
         }
-        
-        obj.array!.forEach((item, index)=>{
+
+        await Promise.all(obj.array!.map(async (item, index) => {
             context.parent = obj.array
             context.parentKey = index;
-            data[index] = deserialize(item, context);
-        })
+            data[index] = await deserialize(item, context);
+        }));
         return data;
 
     } else {
@@ -56,7 +56,7 @@ function deserializeArray(obj: ISerialized, context: SerializableContext): any[]
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
         const meta = SerializableContext.getMeta(obj.typename);
-        const params = obj.param ? obj.param.map((param) => deserialize(param, context)) : [];
+        const params = await Promise.all(obj.param ? obj.param.map((param) => deserialize(param, context)) : []);
         const instance = new type(...params);
         context.add(instance, obj.id);
         if (obj.data) {
@@ -64,37 +64,37 @@ function deserializeArray(obj: ISerialized, context: SerializableContext): any[]
             for (const key of keys) {
                 context.parent = instance;
                 context.parentKey = key;
-                instance[key] = deserialize(obj.data[key], context);
+                instance[key] = await deserialize(obj.data[key], context);
             }
         }
-        
-        obj.array!.forEach((item, index)=>{
+
+        await Promise.all(obj.array!.map(async (item, index) => {
             context.parent = instance;
             context.parentKey = index;
             instance[index] = deserialize(item, context);
-        })
+        }))
 
         return instance;
     }
 }
 
-function deserializeFunction(obj: ISerializedFunction, context: SerializableContext): Function {
+async function deserializeFunction(obj: ISerializedFunction, context: SerializableContext): Promise<Function> {
     const func = new Function(
         ...obj.paramDefine || [],
         obj.body
     );
     context.add(func, obj.id);
-    if(context.parent && context.parentKey) {
+    if (context.parent && context.parentKey) {
         const meta = SerializableContext.getMeta(context.parent.constructor.name);
-        if(!meta) return func;
+        if (!meta) return func;
         const fieldMeta = meta.getFieldMeta(context.parentKey as string);
-        if(!fieldMeta) return func;
+        if (!fieldMeta) return func;
         const mode = fieldMeta.mode;
-        if(mode & SerializableMode.RUN_ON_DESERIALIZE) {
-            const params = obj.param ? obj.param.map((param) => deserialize(param, context)) : [];
+        if (mode & SerializableMode.RUN_ON_DESERIALIZE) {
+            const params = obj.param ? await Promise.all(obj.param.map((param) => deserialize(param, context))) : [];
             const instance = context.parent;
             func.apply(instance, params);
-        } 
+        }
     }
     return func;
 }
@@ -107,23 +107,21 @@ function deserializeRef(obj: ISerializedRef, context: SerializableContext) {
     return item;
 }
 
-export function deserialize<T>(obj: any, context: SerializableContext = new SerializableContext()): T {
+export async function deserialize<T>(obj: any, context: SerializableContext = new SerializableContext()): Promise<T> {
     switch (typeof obj) {
         case 'object':
             const deserializable: IDeserializable = obj;
             if (!deserializable.id) return obj;
             if (!(deserializable as ISerialized).typename)
                 return deserializeRef(obj, context);
-            if((deserializable as ISerializedFunction).typename === 'Function') {
+            if ((deserializable as ISerializedFunction).typename === 'Function') {
                 return deserializeFunction(obj, context) as T;
             }
             const serialized: ISerialized = obj;
             if (serialized.array) {
-                const array = deserializeArray(serialized, context);
-                return array as T;
+                return deserializeArray(serialized, context) as T;
             } else {
-                const obj = deserializeObject(serialized, context);
-                return obj;
+                return deserializeObject(serialized, context);
             }
         default:
             return obj;

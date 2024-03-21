@@ -6,10 +6,10 @@ import { deserialize } from "../src/deserialize";
 import { SerializableEvent } from "../src/serializable-event";
 
 describe('event', () => {
-    
-    test('event Emitter', () => {
+
+    test('event Emitter', async () => {
         @Serializable()
-        class ClassUnderTest{
+        class ClassUnderTest {
             emitter = new EventEmitter();
             handle(num: number) {
                 return num;
@@ -21,8 +21,8 @@ describe('event', () => {
         const instanceUnderTest = new ClassUnderTest();
 
         SerializableContext.register(EventEmitter);
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize<ClassUnderTest>(serialized);
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize<ClassUnderTest>(serialized);
         instanceUnderTest.emitter.emit('test', 1);
         SerializableContext.removeType(EventEmitter);
         SerializableContext.removeType(ClassUnderTest);
@@ -30,9 +30,9 @@ describe('event', () => {
         expect(deserialized.emitter.emit('test', 1)).toBe(true);
     });
 
-    test('event Emitter with bind', () => {
+    test('event Emitter with bind', async () => {
         @Serializable()
-        class ClassUnderTest{
+        class ClassUnderTest {
             emitter = new EventEmitter();
             handle(num: number) {
                 return num;
@@ -44,14 +44,14 @@ describe('event', () => {
         const instanceUnderTest = new ClassUnderTest();
 
         SerializableContext.register(EventEmitter);
-        expect(()=>serialize(instanceUnderTest)).toThrow();
+        expect(async () => await serialize(instanceUnderTest)).rejects.toThrow();
         SerializableContext.removeType(EventEmitter);
     });
 
-    test('event', ()=>{
+    test('event', async () => {
         @Serializable()
-        class ClassUnderTest{
-            onTest = new SerializableEvent<(num: number)=>void>();
+        class ClassUnderTest {
+            onTest = new SerializableEvent<(num: number) => void>();
             number = 0;
             handle(num: number) {
                 this.number = num;
@@ -61,9 +61,9 @@ describe('event', () => {
             }
         }
         const instanceUnderTest = new ClassUnderTest();
-        
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize<ClassUnderTest>(serialized);
+
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize<ClassUnderTest>(serialized);
         deserialized.onTest.emit(1);
 
         expect(deserialized.number).toBe(1);

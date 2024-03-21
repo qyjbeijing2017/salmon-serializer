@@ -26,9 +26,18 @@ export class SerializableFieldMeta {
     mode: SerializableMode = SerializableMode.TO_PLAIN_AND_CLASS;
     type: SerializableFieldType = SerializableFieldType.PROPERTY;
     paramMeta: SerializableParamMeta<any>[] = [];
+    toClass?: (value: any, context: SerializableContext) => Promise<any> | any;
+    toPlain?: (value: any, context: SerializableContext) => Promise<any> | any;
 }
 
-export type SerializableParamMeta<T> = T | ((context: SerializableContext) => T);
+export class SerializableParamMeta<T>{
+    readonly findDefault: T | ((context: SerializableContext) => T);
+    toClass?: (value: any, context: SerializableContext) => Promise<T> | T;
+    toPlain?: (value: T, context: SerializableContext) => Promise<any> | any;
+    constructor(findDefault: T | ((context: SerializableContext) => T)) {
+        this.findDefault = findDefault;
+    }
+}
 
 export class SerializableMeta<T extends Object> {
     type?: ClassConstructor<T>;

@@ -4,34 +4,34 @@ import { serialize } from "../src/serialize";
 
 describe('serialize simple', () => {
 
-    test('number', () => {
+    test('number', async () => {
         const numberOnTest = 1.23893;
 
-        const serialized = serialize(numberOnTest);
+        const serialized = await serialize(numberOnTest);
 
         expect(serialized).toBeCloseTo(numberOnTest);
     });
 
-    test('string', () => {
+    test('string', async () => {
         const stringOnTest = `serialize string`;
 
-        const serialized = serialize(stringOnTest);
+        const serialized = await serialize(stringOnTest);
 
         expect(serialized).toBe(stringOnTest);
     });
 
-    test('boolean', () => {
+    test('boolean', async () => {
         const trueOnTest = true;
         const falseOnTest = false
 
-        const trueSerialized = serialize(trueOnTest);
-        const falseSerialized = serialize(falseOnTest);
+        const trueSerialized = await serialize(trueOnTest);
+        const falseSerialized = await serialize(falseOnTest);
 
         expect(trueSerialized).toBe(trueOnTest);
         expect(falseSerialized).toBe(falseOnTest);
     });
 
-    test('array', () => {
+    test('array', async () => {
         const arrayOnTest: Array<string | number | boolean> = ['str1', 'str2', 'str3', 1, 2, 3, true, false];
         const serializedOnTest: ISerialized = {
             id: ``,
@@ -39,14 +39,14 @@ describe('serialize simple', () => {
             array: arrayOnTest,
         }
 
-        const serialized = serialize(arrayOnTest);
+        const serialized = await serialize(arrayOnTest);
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
 
         expect(json).toBe(JSON.stringify(serializedOnTest));
     })
 
-    test('object', () => {
+    test('object', async () => {
         const objectOnTest = {
             num: 1,
             str: `2`,
@@ -76,7 +76,7 @@ describe('serialize simple', () => {
             }
         }
 
-        const serialized = serialize(objectOnTest) as any;
+        const serialized = await serialize(objectOnTest) as any;
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
         (serializedOnTest.data!.object2 as ISerialized).id = serialized.data['object2'].id;
@@ -84,7 +84,7 @@ describe('serialize simple', () => {
         expect(json).toBe(JSON.stringify(serializedOnTest));
     })
 
-    test(`object with id`, () => {
+    test(`object with id`, async () => {
         const objectOnTest = {
             id: `ob1`,
             num: 1,
@@ -110,13 +110,13 @@ describe('serialize simple', () => {
             }
         }
 
-        const serialized = serialize(objectOnTest);
+        const serialized = await serialize(objectOnTest);
         const json = JSON.stringify(serialized);
 
         expect(json).toBe(JSON.stringify(serializedOnTest));
     })
 
-    test(`class`, () => {
+    test(`class`, async () => {
         class TestSerializationClass {
             num = 1;
             str = `str2`;
@@ -162,7 +162,7 @@ describe('serialize simple', () => {
 
 
         SerializableContext.register(TestSerializationClass, TestSerializationClass2);
-        const serialized = serialize(instanceOnTest) as any;
+        const serialized = await serialize(instanceOnTest) as any;
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
         (serializedOnTest.data!.testInstance as ISerialized).id = serialized.data.testInstance.id;
@@ -171,7 +171,7 @@ describe('serialize simple', () => {
         expect(json).toBe(JSON.stringify(serializedOnTest));
     })
 
-    test(`class with id`, ()=>{
+    test(`class with id`, async ()=>{
         class TestSerializationClassWithID {
             id = `ts1`;
             sth = `123`;
@@ -187,7 +187,7 @@ describe('serialize simple', () => {
         }
 
         SerializableContext.register(TestSerializationClassWithID);
-        const serialized = serialize(instanceOnTest);
+        const serialized = await serialize(instanceOnTest);
         const json = JSON.stringify(serialized);
         SerializableContext.removeType(TestSerializationClassWithID);
 

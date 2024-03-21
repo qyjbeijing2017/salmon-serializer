@@ -1,21 +1,27 @@
 import { SerializableContext } from "./serializable-context";
-import { SerializableMode, SerializableParamMeta } from "./serializable-meta";
+import { SerializableMeta, SerializableMode, SerializableParamMeta } from "./serializable-meta";
 import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
 
 
-function serializeArrayInstance(obj: Array<any>, context: SerializableContext): ISerialized {
+function serializeParam<T extends Object>(meta: SerializableMeta<T> | undefined, context: SerializableContext) {
+    if (!meta || meta.paramMeta.length === 0) return;
+
+}
+
+
+async function serializeArrayInstance(obj: Array<any>, context: SerializableContext): Promise<ISerialized> {
     const meta = obj.constructor ? SerializableContext.getMeta(obj.constructor.name) : undefined;
     const [id] = context.add(obj, (obj as any).id);
 
     let param: IDeserializable[] | undefined = undefined;
     if (meta?.paramMeta && meta.paramMeta.length > 0) {
         context.instance = obj;
-        param = meta.paramMeta.map((param) => {
-            if (typeof param === 'function') {
-                return param(context);
-            }
-            return param;
-        }).map((param) => serialize(param, context));
+        param = await Promise.all(meta.paramMeta.map((meta) => {
+            if (typeof meta.findDefault === 'function') {
+                return meta.findDefault(context);
+            } [meta.findDefault, meta] as [any, SerializableParamMeta<any>];
+            return
+        }).map((param) => serialize(param, context)));
     }
 
     let data: any = undefined;
@@ -27,14 +33,14 @@ function serializeArrayInstance(obj: Array<any>, context: SerializableContext): 
             if (!array) array = [];
             context.parent = obj;
             context.parentKey = index;
-            array[index] = serialize(obj[index], context);
+            array[index] = await serialize(obj[index], context);
             index++;
             continue;
         }
         context.parent = obj;
         context.parentKey = key;
         if (!data) data = {};
-        data[key] = serialize((obj as any)[key], context);
+        data[key] = await serialize((obj as any)[key], context);
     }
     return {
         id,
@@ -45,19 +51,19 @@ function serializeArrayInstance(obj: Array<any>, context: SerializableContext): 
     };
 }
 
-function serializeObject(obj: any, context: SerializableContext): ISerialized {
+async function serializeObject(obj: any, context: SerializableContext): Promise<ISerialized> {
     const meta = obj.constructor ? SerializableContext.getMeta(obj.constructor.name) : undefined;
     const [id] = context.add(obj, obj.id);
 
     let param: IDeserializable[] | undefined = undefined;
     if (meta?.paramMeta && meta.paramMeta.length > 0) {
         context.instance = obj;
-        param = meta.paramMeta.map((param) => {
-            if (typeof param === 'function') {
-                return param(context);
+        param = await Promise.all(meta.paramMeta.map((param) => {
+            if (typeof param.findDefault === 'function') {
+                return param.findDefault(context);
             }
-            return param;
-        }).map((param) => serialize(param, context));
+            return param.findDefault;
+        }).map((param) => serialize(param, context)));
     }
 
     const data: any = {};
@@ -65,7 +71,7 @@ function serializeObject(obj: any, context: SerializableContext): ISerialized {
     for (const key of keys) {
         context.parent = obj;
         context.parentKey = key;
-        data[key] = serialize(obj[key], context);
+        data[key] = await serialize(obj[key], context);
     }
     return {
         id,
@@ -80,9 +86,8 @@ function serializeRef(obj: any, context: SerializableContext): ISerializedRef {
     return { id }
 }
 
-
-function runningFunction(obj: Function, context: SerializableContext, serialized: ISerializedFunction) {
-    const meta = context.parent.constructor ? SerializableContext.getMeta(context.parent.constructor.name): undefined;
+async function runningFunction(obj: Function, context: SerializableContext, serialized: ISerializedFunction) {
+    const meta = context.parent.constructor ? SerializableContext.getMeta(context.parent.constructor.name) : undefined;
     if (context.parent && context.parentKey) {
         if (!meta) return;
         const fieldMeta = meta.getFieldMeta(context.parentKey.toString());
@@ -90,21 +95,21 @@ function runningFunction(obj: Function, context: SerializableContext, serialized
 
         const paramMeta: SerializableParamMeta<any>[] = fieldMeta.paramMeta;
         const invokeParams = paramMeta.map((param) => {
-            if (typeof param === 'function') {
-                return param(context);
+            if (typeof param.findDefault === 'function') {
+                return param.findDefault(context);
             }
-            return param;
+            return param.findDefault;
         });
-        serialized.param = invokeParams.map((param) => serialize(param, context));
+        serialized.param = await Promise.all(invokeParams.map((param) => serialize(param, context)));
         serialized.data = obj.bind(context.parent)(...invokeParams);
     } else {
         serialized.data = obj();
     }
 }
 
-function serializeFunction(obj: Function, context: SerializableContext): ISerializedFunction {
+async function serializeFunction(obj: Function, context: SerializableContext): Promise<ISerializedFunction> {
 
-    if(obj.name.startsWith('bound ')) {
+    if (obj.name.startsWith('bound ')) {
         throw new Error('Cannot serialize bound function');
     }
 
@@ -136,12 +141,12 @@ function serializeFunction(obj: Function, context: SerializableContext): ISerial
     }
 
     if (metaField?.mode && metaField?.mode & SerializableMode.RUN_ON_SERIALIZE) {
-        runningFunction(obj, context, output);
+        await runningFunction(obj, context, output);
     }
     return output;
 }
 
-export function serialize(obj: any, context: SerializableContext = new SerializableContext()): IDeserializable {
+export async function serialize(obj: any, context: SerializableContext = new SerializableContext()): Promise<IDeserializable> {
     if (context.hasValue(obj)) {
         return serializeRef(obj, context);
     }

@@ -4,34 +4,34 @@ import { SerializableContext } from "../src/serializable-context";
 
 describe('deserialize simple', () => {
 
-    test('number', () => {
+    test('number', async () => {
         const numberOnTest = 1.23893;
 
-        const deserialized = deserialize(numberOnTest);
+        const deserialized = await deserialize(numberOnTest);
 
         expect(deserialized).toBeCloseTo(numberOnTest);
     });
 
-    test('string', () => {
+    test('string', async () => {
         const stringOnTest = `serialize string`;
 
-        const deserialized = deserialize(stringOnTest);
+        const deserialized = await deserialize(stringOnTest);
 
         expect(deserialized).toBe(stringOnTest);
     });
 
-    test('boolean', () => {
+    test('boolean', async () => {
         const trueOnTest = true;
         const falseOnTest = false
 
-        const trueDeserialized = deserialize(trueOnTest);
-        const falseDeserialized = deserialize(falseOnTest);
+        const trueDeserialized = await deserialize(trueOnTest);
+        const falseDeserialized = await deserialize(falseOnTest);
 
         expect(trueDeserialized).toBe(trueOnTest);
         expect(falseDeserialized).toBe(falseOnTest);
     });
 
-    test('array', () => {
+    test('array', async () => {
         const arrayOnTest: Array<string | number | boolean> = ['str1', 'str2', 'str3', 1, 2, 3, true, false];
         const serializedOnTest: ISerialized = {
             id: `array1`,
@@ -39,12 +39,12 @@ describe('deserialize simple', () => {
             array: arrayOnTest,
         }
 
-        const deserialized = deserialize(serializedOnTest);
+        const deserialized = await deserialize(serializedOnTest);
 
         expect(deserialized).toEqual(arrayOnTest);
     })
 
-    test(`object`, () => {
+    test(`object`, async () => {
         const objectOnTest = {
             id: `ob1`,
             num: 1,
@@ -70,12 +70,12 @@ describe('deserialize simple', () => {
             }
         }
 
-        const deserialized = deserialize(serializedOnTest);
+        const deserialized = await deserialize(serializedOnTest);
 
         expect(deserialized).toEqual(objectOnTest);
     })
 
-    test(`class`, () => {
+    test(`class`, async () => {
         class TestSerializationClass {
             num = 1;
             str = `str2`;
@@ -120,7 +120,7 @@ describe('deserialize simple', () => {
         }
 
         SerializableContext.register(TestSerializationClass, TestSerializationClass2);
-        const deserialized = deserialize<TestSerializationClass>(serializedOnTest);
+        const deserialized = await deserialize<TestSerializationClass>(serializedOnTest);
         SerializableContext.removeType(TestSerializationClass, TestSerializationClass2);
 
         expect(deserialized).toEqual(instanceOnTest);

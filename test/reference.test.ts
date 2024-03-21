@@ -35,14 +35,14 @@ describe('reference object', () => {
         }
     }
 
-    test('serialize', () => {
-        const serialized = serialize(objectUnderTest);
+    test('serialize', async () => {
+        const serialized = await serialize(objectUnderTest);
 
         expect(serialized).toEqual(serializedUnderTest);
     })
 
-    test(`deserialize`, () => {
-        const deserialized = deserialize(serializedUnderTest);
+    test(`deserialize`, async () => {
+        const deserialized = await deserialize(serializedUnderTest);
 
         expect(deserialized).toEqual(objectUnderTest);
         expect((deserialized as any).object1).toBe((deserialized as any).object2);
@@ -77,14 +77,14 @@ describe('reference object', () => {
         }
     }
 
-    test(`loop serialize`, () => {
-        const serialized = serialize(loopObject1UnderTest);
+    test(`loop serialize`, async () => {
+        const serialized = await serialize(loopObject1UnderTest);
 
         expect(serialized).toEqual(loopSerializedUnderTest);
     })
 
-    test(`loop deserialize`, () => {
-        const deserialized = deserialize(loopSerializedUnderTest);
+    test(`loop deserialize`, async () => {
+        const deserialized = await deserialize(loopSerializedUnderTest);
 
         expect(deserialized).toEqual(loopObject1UnderTest);
         expect((deserialized as any).object2.object1).toBe(deserialized);
@@ -143,14 +143,14 @@ describe('reference object', () => {
         }
     }
 
-    test(`serialize loop class`, () => {
-        const serialized = serialize(parentUnderTest);
+    test(`serialize loop class`, async () => {
+        const serialized = await serialize(parentUnderTest);
         expect(serialized).toEqual(loopClassSerializedUnderTest);
     })
 
-    test(`deserialize loop class`, () => {
+    test(`deserialize loop class`, async () => {
         SerializableContext.register(Parent, Child);
-        const deserialized = deserialize<Parent>(loopClassSerializedUnderTest);
+        const deserialized = await deserialize<Parent>(loopClassSerializedUnderTest);
         SerializableContext.removeType(Parent, Child);
 
         expect(deserialized).toEqual(parentUnderTest);

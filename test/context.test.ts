@@ -6,7 +6,7 @@ import { deserialize } from "../src/deserialize";
 import { Ignore } from "../src/decorator/ignore";
 
 describe('context', () => {
-    test('exclude & include', () => {
+    test('exclude & include', async () => {
         class ExcludeClassUnderTest {
         }
         @Serializable()
@@ -38,8 +38,8 @@ describe('context', () => {
             }
         });
 
-        const serialized = serialize(instance, contextUnderTest);
-        const deserialized = deserialize<ClassUnderTest>(serialized, contextUnderTest);
+        const serialized = await serialize(instance, contextUnderTest);
+        const deserialized = await deserialize<ClassUnderTest>(serialized, contextUnderTest);
 
         expect(serialized).toEqual(serializedUnderTest);
         expect(deserialized.exclude).toBe(excludeInstance);

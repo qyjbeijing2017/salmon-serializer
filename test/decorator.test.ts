@@ -9,7 +9,7 @@ import { SerializeParam } from '../src/decorator/serialize-param';
 import { Ignore } from '../src/decorator/ignore';
 
 describe(`simple decorator`, () => {
-    test(`@Serializable`, () => {
+    test(`@Serializable`, async () => {
         @Serializable()
         class ClassUnderTest {
         }
@@ -17,7 +17,7 @@ describe(`simple decorator`, () => {
         SerializableContext.removeType(ClassUnderTest);
     });
 
-    test('ignore', () => {
+    test('ignore', async () => {
         @Serializable({ mode: SerializableMode.IGNORE })
         class ClassUnderTest {
             @SerializeField()
@@ -57,15 +57,15 @@ describe(`simple decorator`, () => {
         }
         const instanceUnderTest = new ClassUnderTest();
 
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize(deserializedUnderTest);
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize(deserializedUnderTest);
         SerializableContext.removeType(ClassUnderTest);
 
         expect(serialized).toEqual(serializedUnderTest);
         expect(deserialized).toEqual(instanceUnderTest);
     });
 
-    test('accessor', () => {
+    test('accessor', async () => {
         @Serializable()
         class ClassUnderTest {
             @Ignore()
@@ -92,15 +92,15 @@ describe(`simple decorator`, () => {
         }
         const instanceUnderTest = new ClassUnderTest();
 
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize<ClassUnderTest>(serializedUnderTest);
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize<ClassUnderTest>(serializedUnderTest);
         SerializableContext.removeType(ClassUnderTest);
 
         expect(serialized).toEqual(serializedUnderTest);
         expect(deserialized.testValue).toBe('test');
     });
 
-    test('functions & ref', () => {
+    test('functions & ref', async () => {
         @Serializable()
         class ClassUnderTestRef {
             id: string = 'testRef';
@@ -156,8 +156,8 @@ describe(`simple decorator`, () => {
         const instanceUnderTest = new ClassUnderTest();
         instanceUnderTest.arrow = (a: number, b: number) => a * b;
         (instanceUnderTest.arrow as any).id = 'testArrow';
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize<ClassUnderTest>(serializedUnderTest);
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize<ClassUnderTest>(serializedUnderTest);
         SerializableContext.removeType(ClassUnderTest);
         SerializableContext.removeType(ClassUnderTestRef);
 
@@ -167,7 +167,7 @@ describe(`simple decorator`, () => {
         expect((deserialized.fun as any)(3, 4)).toBe(12);
     });
 
-    test('run', () => {
+    test('run', async () => {
         @Serializable()
         class ClassUnderTest {
             id: string = 'test';
@@ -202,15 +202,15 @@ describe(`simple decorator`, () => {
             }
         }
 
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize<ClassUnderTest>(serializedUnderTest);
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize<ClassUnderTest>(serializedUnderTest);
         SerializableContext.removeType(ClassUnderTest);
 
         expect(serialized).toEqual(serializedUnderTest);
         expect(deserialized.mul(3, 2)).toBe(6);
     })
 
-    test('constructor', () => {
+    test('constructor', async () => {
         @Serializable()
         class ParentUnderTest {
             id: string = 'parent';
@@ -250,8 +250,8 @@ describe(`simple decorator`, () => {
         }
         const instanceUnderTest = new ParentUnderTest();
 
-        const serialized = serialize(instanceUnderTest);
-        const deserialized = deserialize<ParentUnderTest>(serialized);
+        const serialized = await serialize(instanceUnderTest);
+        const deserialized = await deserialize<ParentUnderTest>(serialized);
         SerializableContext.removeType(ParentUnderTest);
         SerializableContext.removeType(ChildUnderTest);
 
