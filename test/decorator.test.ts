@@ -6,7 +6,7 @@ import { SerializableMode } from '../src/serializable-meta';
 import { ISerialized } from '../src/serializable-object';
 import { serialize } from '../src/serialize';
 import { SerializeParam } from '../src/decorator/serialize-param';
-import EventEmitter from 'events';
+import { Ignore } from '../src/decorator/ignore';
 
 describe(`simple decorator`, () => {
     test(`@Serializable`, () => {
@@ -68,9 +68,9 @@ describe(`simple decorator`, () => {
     test('accessor', () => {
         @Serializable()
         class ClassUnderTest {
-            @SerializeField({ mode: SerializableMode.IGNORE })
+            @Ignore()
             id: string = 'test';
-            @SerializeField({ mode: SerializableMode.IGNORE })
+            @Ignore()
             testValue: string = 'test1';
 
             @SerializeField()
