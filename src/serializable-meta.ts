@@ -5,7 +5,10 @@ export enum SerializableMode {
     IGNORE = 0,
     TO_PLAIN_ONLY = 1,
     TO_CLASS_ONLY = 2,
-    TO_PLAIN_AND_CLASS = 3,
+    TO_PLAIN_AND_CLASS = TO_PLAIN_ONLY | TO_CLASS_ONLY,
+    RUN_ON_DESERIALIZE = 4,
+    RUN_ON_SERIALIZE = 8,
+    RUN_ON_BOTH = RUN_ON_DESERIALIZE | RUN_ON_SERIALIZE,
 }
 
 export enum SerializableFieldType {
@@ -53,14 +56,14 @@ export class SerializableMeta<T extends Object> {
 
     isSerializable(key: string) {
         const meta = this.keysMeta.get(key);
-        if (!meta) return this.mode & SerializableMode.TO_PLAIN_ONLY ? true : false;
-        return meta.mode & SerializableMode.TO_PLAIN_ONLY ? true : false;
+        const mode = meta?.mode ?? this.mode;
+        return mode & SerializableMode.TO_PLAIN_ONLY ?? mode & SerializableMode.RUN_ON_SERIALIZE ? true : false;
     }
 
     isDeserializable(key: string) {
         const meta = this.keysMeta.get(key);
-        if (!meta) return this.mode & SerializableMode.TO_CLASS_ONLY ? true : false;
-        return meta.mode & SerializableMode.TO_CLASS_ONLY ? true : false;
+        const mode = meta?.mode ?? this.mode;
+        return mode & SerializableMode.TO_CLASS_ONLY ?? mode & SerializableMode.RUN_ON_DESERIALIZE ? true : false;
     }
 
     getSerializableKeys(instance: T) {

@@ -12,6 +12,9 @@ export function SerializeField<T>(options: Partial<SerializableFieldOptions> = {
         const fieldMeta = meta.ensureFieldMeta(key);
         if (options.mode !== undefined && options.mode !== null) {
             fieldMeta.mode = options.mode;
+            if(options.mode & SerializableMode.RUN_ON_BOTH && !descriptor) {
+                throw new Error(`Field must be a method to run mode`);
+            }
         }
         if (descriptor) {
             fieldMeta.type = SerializableFieldType.METHOD;

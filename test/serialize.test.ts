@@ -76,7 +76,7 @@ describe('serialize simple', () => {
             }
         }
 
-        const serialized = serialize(objectOnTest);
+        const serialized = serialize(objectOnTest) as any;
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
         (serializedOnTest.data!.object2 as ISerialized).id = serialized.data['object2'].id;
@@ -162,7 +162,7 @@ describe('serialize simple', () => {
 
 
         SerializableContext.register(TestSerializationClass, TestSerializationClass2);
-        const serialized = serialize(instanceOnTest);
+        const serialized = serialize(instanceOnTest) as any;
         const json = JSON.stringify(serialized);
         serializedOnTest.id = serialized.id;
         (serializedOnTest.data!.testInstance as ISerialized).id = serialized.data.testInstance.id;

@@ -5,7 +5,6 @@ import { SerializableContext } from '../src/serializable-context';
 import { SerializableMode } from '../src/serializable-meta';
 import { ISerialized } from '../src/serializable-object';
 import { serialize } from '../src/serialize';
-import { SerializeParam } from '../src/decorator/serialize-param';
 
 describe(`simple decorator`, () => {
     test(`@Serializable`, () => {
@@ -99,78 +98,68 @@ describe(`simple decorator`, () => {
         expect(deserialized.testValue).toBe('test');
     });
 
-    test('function', () => {
-
+    test('functions & ref', () => {
         @Serializable()
         class ClassUnderTestRef {
             id: string = 'testRef';
-            testNumber: number = 2;
+            @SerializeField()
+            mul(a: number, b: number) { return a * b; }
         }
-
-        @Serializable({ mode: SerializableMode.IGNORE })
+        @Serializable()
         class ClassUnderTest {
             id: string = 'test';
-            testValue: string = 'test1';
-            add: number = 0;
+            testNumber: number = 2;
+            arrow = (a: number, b: number) => a + b;
             @SerializeField()
-            ref: ClassUnderTestRef;
+            fun() { return 2; }
+            constructor() {
+                (this.arrow as any).id = 'testArrow';
+                (this.fun as any) = this.ref.mul;
+                (this.fun as any).id = 'testFun';
 
-            constructor(
-                @SerializeParam('test2')
-                test: string,
-                @SerializeParam(ctx => ctx.instance.ref)
-                ref: ClassUnderTestRef
-            ) {
-                this.testValue = test;
-                this.ref = ref;
             }
-
-            @SerializeField()
-            testRef(
-                @SerializeParam(3)
-                num: number,
-                @SerializeParam(ctx => ctx.parent.ref)
-                ref: ClassUnderTestRef
-            ) {
-                this.add = num + ref.testNumber;
-                return this.add;
-            }
+            ref: ClassUnderTestRef = new ClassUnderTestRef();
         }
+
         const serializedUnderTest: ISerialized = {
             id: `test`,
             typename: ClassUnderTest.name,
-            param: [
-                'test2',
-                {
+            data: {
+                id: `test`,
+                testNumber: 2,
+                arrow: {
+                    id: 'testArrow',
+                    typename: 'Function',
+                    paramDefine: ['a', 'b'],
+                    body: 'return  a * b'
+                },
+                ref: {
                     id: 'testRef',
                     typename: ClassUnderTestRef.name,
                     data: {
-                        id: 'testRef'
-                    }
-                }
-            ],
-            data: {
-                ref: {
-                    id: 'testRef',
-                },
-                testRef: {
-                    id: 'testRef',
-                    typename: "Function",
-                    data: 5,
-                    param: [
-                        3,
-                        {
-                            id: 'testRef',
+                        id: 'testRef',
+                        mul: {
+                            id: 'testFun',
+                            typename: 'Function',
+                            paramDefine: ['a', 'b'],
+                            body: ' return a * b; '
                         }
-                    ]
+                    }
+                },
+                fun: {
+                    id: 'testFun',
                 }
-            },
+            }
         }
-        const instanceUnderTest = new ClassUnderTest('test3', new ClassUnderTestRef());
-
+        const instanceUnderTest = new ClassUnderTest();
+        instanceUnderTest.arrow = (a: number, b: number) => a * b;
+        (instanceUnderTest.arrow as any).id = 'testArrow';
         const serialized = serialize(instanceUnderTest);
-        SerializableContext.removeType(ClassUnderTest);
+        const deserialized = deserialize<ClassUnderTest>(serializedUnderTest);
 
         expect(serialized).toEqual(serializedUnderTest);
+        expect(deserialized.testNumber).toBe(2);
+        expect(deserialized.arrow(1, 2)).toBe(2);
+        expect((deserialized.fun as any)(3, 4)).toBe(12);
     });
 });

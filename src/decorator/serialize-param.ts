@@ -1,5 +1,4 @@
 import { SerializableContext } from "../serializable-context";
-import { ClassConstructor } from "../serializable-object";
 
 export function SerializeParam<T>(val: T | ((context: SerializableContext) => T)): ParameterDecorator {
     return (target, key, parameterIndex) => {
