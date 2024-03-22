@@ -6,7 +6,7 @@ export function calculateSerializableTotalItems(item: any, context: Serializable
     if (typeof item !== 'object') return 1;
     if (calculated.includes(item)) return 0;
     calculated.push(item);
-    const meta = SerializableContext.getMeta(item.constructor.name);
+    const meta = item.constructor ? SerializableContext.getMeta(item.constructor.name) : undefined;
     if (meta?.paramMeta) {
         context.instance = item;
         const params = meta.paramMeta.map(param => {
