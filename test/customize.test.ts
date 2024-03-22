@@ -155,15 +155,17 @@ describe('customize', () => {
 
         const serialized = await serialize(instanceUnderTest);
         const arraySerialized = await serialize(arrayUnderTest);
+        SerializableContext.removeType(ClassUnderTest);
+        SerializableContext.removeType(ArrayUnderTest);
 
         expect(serialized).toBe('customized class');
         expect(arraySerialized).toBe('customized class');
     });
 
     test('serialized', async () => {
-        const classUnderTest = jest.fn((instance, context)=>{});
-        const fieldUnderTest = jest.fn((instance, context)=>{});
-        const paramUnderTest = jest.fn((instance, context)=>{});
+        const classUnderTest = jest.fn((instance, context) => { });
+        const fieldUnderTest = jest.fn((instance, context) => { });
+        const paramUnderTest = jest.fn((instance, context) => { });
         @Serializable({
             onSerialized: classUnderTest
         })
@@ -179,7 +181,7 @@ describe('customize', () => {
                 @SerializeParam('testParam', {
                     onSerialized: paramUnderTest
                 }) param: string
-            ) {}
+            ) { }
         }
         const serializedUnderTest: ISerialized = {
             id: 'test',
@@ -193,6 +195,7 @@ describe('customize', () => {
 
 
         await serialize(instanceUnderTest);
+        SerializableContext.removeType(ClassUnderTest);
 
         expect(classUnderTest.mock.calls).toHaveLength(1);
         expect(classUnderTest.mock.calls[0][0]).toEqual(serializedUnderTest);
@@ -203,9 +206,9 @@ describe('customize', () => {
     });
 
     test('deserialized', async () => {
-        const classUnderTest = jest.fn((instance, context)=>{});
-        const fieldUnderTest = jest.fn((instance, context)=>{});
-        const paramUnderTest = jest.fn((instance, context)=>{});
+        const classUnderTest = jest.fn((instance, context) => { });
+        const fieldUnderTest = jest.fn((instance, context) => { });
+        const paramUnderTest = jest.fn((instance, context) => { });
         @Serializable({
             onDeserialized: classUnderTest
         })
@@ -221,7 +224,7 @@ describe('customize', () => {
                 @SerializeParam('testParam', {
                     onDeserialized: paramUnderTest
                 }) param: string
-            ) {}
+            ) { }
         }
         const serializedUnderTest: ISerialized = {
             id: 'test',
@@ -234,6 +237,7 @@ describe('customize', () => {
         const instanceUnderTest = new ClassUnderTest('testParam');
 
         await deserialize<ClassUnderTest>(serializedUnderTest);
+        SerializableContext.removeType(ClassUnderTest);
 
         expect(classUnderTest.mock.calls).toHaveLength(1);
         expect(classUnderTest.mock.calls[0][0]).toEqual(instanceUnderTest);
@@ -243,4 +247,5 @@ describe('customize', () => {
         expect(paramUnderTest.mock.calls[0][0]).toEqual('testParam');
 
     });
+
 });

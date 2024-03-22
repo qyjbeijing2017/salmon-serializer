@@ -19,7 +19,7 @@ export function Serializable<T extends ClassConstructor<any>>(options: Partial<S
         }
         meta.toPlain = options.toPlain;
         meta.toClass = options.toClass;
-        meta.onSerialized = options.onSerialized;
-        meta.onDeserialized = options.onDeserialized;
+        meta.onSerialized = meta.onSerialized ?? options.onSerialized;
+        meta.onDeserialized = meta.onDeserialized ?? options.onDeserialized;
     }
 }
