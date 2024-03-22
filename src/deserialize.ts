@@ -1,9 +1,9 @@
 import { calculateDeserializableTotalItems } from "./progress";
 import { SerializableContext } from "./serializable-context";
-import { SerializableMeta, SerializableMode } from "./serializable-meta";
+import { SerializableFieldMeta, SerializableMeta, SerializableMode } from "./serializable-meta";
 import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
 
-async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any> | undefined) {
+async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any>| SerializableFieldMeta | undefined) {
     if (params === undefined) return [];
     return await Promise.all(params.map(async (param, index) => {
         if (meta?.paramMeta[index]?.toClass) {
@@ -17,8 +17,8 @@ async function deserializeObject(obj: ISerialized, context: SerializableContext)
     if (obj.typename === 'Object') {
         const data: any = {};
         context.add(data, obj.id);
+        context.parent = data;
         for (const key in obj.data) {
-            context.parent = data;
             context.parentKey = key;
             data[key] = await deserialize(obj.data[key], context);
         }
@@ -33,8 +33,8 @@ async function deserializeObject(obj: ISerialized, context: SerializableContext)
         const instance = new type(...params);
         context.add(instance, obj.id);
         const keys = meta ? meta.getDeserializableKeys(obj.data!) : Object.keys(obj.data!);
+        context.parent = instance;
         for (const key of keys) {
-            context.parent = instance;
             context.parentKey = key;
             const fieldMeta = meta?.getFieldMeta(key);
             if (fieldMeta?.toClass) {
@@ -51,16 +51,16 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
     if (obj.typename === 'Array') {
         const data: any[] = [];
         context.add(data, obj.id);
+        context.parent = data;
         if (obj.data) {
             for (const key in obj.data) {
-                context.parent = data;
                 context.parentKey = key;
                 (data as any)[key] = await deserialize(obj.data[key], context);
             }
         }
 
+        context.parent = obj.array
         await Promise.all(obj.array!.map(async (item, index) => {
-            context.parent = obj.array
             context.parentKey = index;
             data[index] = await deserialize(item, context);
         }));
@@ -75,10 +75,10 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
         const params = await deserializeParams(obj.param, context, meta);
         const instance = new type(...params);
         context.add(instance, obj.id);
+        context.parent = instance;
         if (obj.data) {
             const keys = meta ? meta.getDeserializableKeys(obj.data) : Object.keys(obj.data);
             for (const key of keys) {
-                context.parent = instance;
                 context.parentKey = key;
                 const fieldMeta = meta?.getFieldMeta(key);
                 if (fieldMeta?.toClass) {
@@ -90,7 +90,6 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
         }
 
         await Promise.all(obj.array!.map(async (item, index) => {
-            context.parent = instance;
             context.parentKey = index;
             instance[index] = deserialize(item, context);
         }))
@@ -112,7 +111,7 @@ async function deserializeFunction(obj: ISerializedFunction, context: Serializab
         if (!fieldMeta) return func;
         const mode = fieldMeta.mode;
         if (mode & SerializableMode.RUN_ON_DESERIALIZE) {
-            const params = await deserializeParams(obj.param, context, meta);
+            const params = await deserializeParams(obj.param, context, fieldMeta);
             const instance = context.parent;
             func.apply(instance, params);
         }

@@ -44,6 +44,8 @@ export class SerializableMeta<T extends Object> {
     mode: SerializableMode = SerializableMode.TO_PLAIN_AND_CLASS;
     readonly keysMeta: Map<string, SerializableFieldMeta> = new Map();
     paramMeta: SerializableParamMeta<any>[] = [];
+    toClass?: (value: any, context: SerializableContext) => Promise<T> | T;
+    toPlain?: (value: T, context: SerializableContext) => Promise<any> | any;
 
     ensureFieldMeta(key: string) {
         let meta = this.keysMeta.get(key);

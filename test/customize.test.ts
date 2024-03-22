@@ -98,4 +98,40 @@ describe('customize', () => {
 
         expect(serialized).toEqual(serializedUnderTest);
     })
+
+    test('param deserialized', async () => {
+        @Serializable()
+        class ClassUnderTest {
+            @Ignore()
+            id = 'test';
+
+            @SerializeField({ mode: SerializableMode.ALL })
+            method(@SerializeParam('test', {
+                toClass: async (target, context) => {
+                    return target + ` customized`;
+                }
+            }) param: string) { this.id = param; }
+            constructor() {
+                (this.method as any).id = 'method';
+            }
+        }
+        const serializedUnderTest: ISerialized = {
+            id: 'test',
+            typename: 'ClassUnderTest',
+            data: {
+                method: {
+                    id: 'method',
+                    typename: 'Function',
+                    paramDefine: ['param'],
+                    body: ' this.id = param; ',
+                    data: 'test',
+                    param: ['test']
+                }
+            }
+        };
+        const instanceUnderTest = await deserialize<ClassUnderTest>(serializedUnderTest);
+        SerializableContext.removeType(ClassUnderTest);
+
+        expect(instanceUnderTest.id).toBe('test customized');
+    })
 });

@@ -27,9 +27,13 @@ async function serializeArrayInstance(obj: Array<any>, context: SerializableCont
     const meta = obj.constructor ? SerializableContext.getMeta(obj.constructor.name) : undefined;
     const [id] = context.add(obj, (obj as any).id);
 
+    if(meta && meta.toClass) {
+        return meta.toClass(obj, context);
+    }
+
+    context.instance = obj;
     let param: IDeserializable[] | undefined = undefined;
     if (meta?.paramMeta && meta.paramMeta.length > 0) {
-        context.instance = obj;
         param = await serializeParam(meta, context);
     }
 
@@ -37,10 +41,10 @@ async function serializeArrayInstance(obj: Array<any>, context: SerializableCont
     let array: any[] | undefined = undefined;
     let index = 0;
     const keys = meta ? meta.getSerializableKeys(obj) : Object.keys(obj);
+    context.parent = obj;
     for (const key of keys) {
         if (index < obj.length) {
             if (!array) array = [];
-            context.parent = obj;
             context.parentKey = index;
 
             const fieldMeta = meta?.getFieldMeta(key);
@@ -52,7 +56,6 @@ async function serializeArrayInstance(obj: Array<any>, context: SerializableCont
             index++;
             continue;
         }
-        context.parent = obj;
         context.parentKey = key;
         if (!data) data = {};
         data[key] = await serialize((obj as any)[key], context);
@@ -70,16 +73,20 @@ async function serializeObject(obj: any, context: SerializableContext): Promise<
     const meta = obj.constructor ? SerializableContext.getMeta(obj.constructor.name) : undefined;
     const [id] = context.add(obj, obj.id);
 
+    if(meta && meta.toClass) {
+        return meta.toClass(obj, context);
+    }
+
     let param: IDeserializable[] | undefined = undefined;
     if (meta?.paramMeta && meta.paramMeta.length > 0) {
         context.instance = obj;
         param = await serializeParam(meta, context);
     }
 
+    context.parent = obj;
     const data: any = {};
     const keys = meta ? meta.getSerializableKeys(obj) : Object.keys(obj);
     for (const key of keys) {
-        context.parent = obj;
         context.parentKey = key;
         const fieldMeta = meta?.getFieldMeta(key);
         if (fieldMeta?.toPlain) {

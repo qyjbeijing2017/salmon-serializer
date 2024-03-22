@@ -4,6 +4,8 @@ import { ClassConstructor } from "../serializable-object";
 
 export interface SerializableOptions {
     mode: SerializableMode;
+    toClass?: (value: any, context: SerializableContext) => Promise<any> | any;
+    toPlain?: (value: any, context: SerializableContext) => Promise<any> | any;
 }
 
 export function Serializable<T extends ClassConstructor<any>>(options: Partial<SerializableOptions> = {}) {
@@ -13,5 +15,7 @@ export function Serializable<T extends ClassConstructor<any>>(options: Partial<S
         if (options.mode !== undefined && options.mode !== null) {
             meta.mode = options.mode;
         }
+        meta.toPlain = options.toPlain;
+        meta.toClass = options.toClass;
     }
 }
