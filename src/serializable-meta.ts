@@ -1,5 +1,5 @@
 import { SerializableContext } from "./serializable-context";
-import { ClassConstructor, ISerialized, SerializableDataType } from "./serializable-object";
+import { ClassConstructor, SerializableDataType } from "./serializable-object";
 
 export enum SerializableMode {
     IGNORE = 0,

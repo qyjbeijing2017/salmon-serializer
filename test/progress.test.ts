@@ -4,7 +4,6 @@ import { SerializableContext } from "../src/serializable-context";
 import { serialize } from "../src/serialize";
 import { deserialize } from "../src/deserialize";
 import { Ignore } from "../src/decorator/ignore";
-import exp from "constants";
 import { ISerialized } from "../src/serializable-object";
 
 describe('context', () => {

@@ -1,7 +1,6 @@
 import { v4 } from "uuid";
 import { ClassConstructor } from "./serializable-object";
 import { SerializableMeta } from "./serializable-meta";
-import { SerializableEvent } from "./serializable-event";
 
 export interface ISerializableContextOptions {
     parent: any;
