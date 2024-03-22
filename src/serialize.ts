@@ -1,7 +1,7 @@
+import { calculateSerializableTotalItems } from "./progress";
 import { SerializableContext } from "./serializable-context";
 import { SerializableMeta, SerializableMode, SerializableParamMeta } from "./serializable-meta";
 import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
-
 
 async function serializeParam<T extends Object>(meta: SerializableMeta<T> | undefined, context: SerializableContext) {
     if (!meta || meta.paramMeta.length === 0) return;
@@ -168,18 +168,49 @@ async function serializeFunction(obj: Function, context: SerializableContext): P
 }
 
 export async function serialize(obj: any, context: SerializableContext = new SerializableContext()): Promise<IDeserializable> {
+    let root = false;
+    if (!context.loading) {
+        context.total = calculateSerializableTotalItems(obj, context);
+        context.loading = true;
+        root = true;
+        context.lastTick = Date.now();
+        if (context.onStart)
+            context.onStart(context.total, obj);
+    }
+
     if (context.hasValue(obj)) {
         return serializeRef(obj, context);
     }
+
+    let output: Promise<IDeserializable> | IDeserializable;
     switch (typeof obj) {
         case 'object':
             if (Array.isArray(obj)) {
-                return serializeArrayInstance(obj, context);
+                output = serializeArrayInstance(obj, context);
+                break;
             }
-            return serializeObject(obj, context);
+            const now = Date.now();
+            if (now - context.lastTick > context.interval) {
+                if (context.onProgress)
+                    context.onProgress(context.processed, context.total, obj);
+                context.lastTick = now;
+            }
+            output = serializeObject(obj, context);
+            break;
         case 'function':
-            return serializeFunction(obj, context);
+            output = serializeFunction(obj, context);
+            break;
         default:
-            return obj;
+            context.processed += 1;
+            output = obj;
+            break;
     }
+
+    await output;
+    if (root && context.onFinish){
+        context.onFinish();
+        context.loading = false;
+    }
+    return output;
+
 }

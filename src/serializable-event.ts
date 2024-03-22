@@ -1,6 +1,5 @@
+import { Ignore } from "./decorator/ignore";
 import { Serializable } from "./decorator/serializable";
-import { SerializeField } from "./decorator/serialize-field";
-import { SerializableMode } from "./serializable-meta";
 
 @Serializable()
 export class SerializableEvent<T extends (...args: any[]) => void> {
@@ -35,14 +34,17 @@ export class SerializableEvent<T extends (...args: any[]) => void> {
         });
     }
 
-    @SerializeField({ mode: SerializableMode.IGNORE })
+    @Ignore()
     public invoke = this.emit;
-    @SerializeField({ mode: SerializableMode.IGNORE })
+    @Ignore()
+    public dispatch = this.emit;
+    @Ignore()
     public once = this.addOnceListener;
-    @SerializeField({ mode: SerializableMode.IGNORE })
+    @Ignore()
     public on = this.addListener;
-    @SerializeField({ mode: SerializableMode.IGNORE })
+    @Ignore()
     public off = this.removeListener;
-    @SerializeField({ mode: SerializableMode.IGNORE })
+    @Ignore()
     public offAll = this.removeAllListeners;
+
 }

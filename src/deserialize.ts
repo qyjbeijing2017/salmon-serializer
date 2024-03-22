@@ -1,11 +1,12 @@
+import { calculateDeserializableTotalItems } from "./progress";
 import { SerializableContext } from "./serializable-context";
 import { SerializableMeta, SerializableMode } from "./serializable-meta";
 import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef, SerializableType } from "./serializable-object";
 
 async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any> | undefined) {
-    if(params === undefined) return [];
+    if (params === undefined) return [];
     return await Promise.all(params.map(async (param, index) => {
-        if(meta?.paramMeta[index]?.toClass) {
+        if (meta?.paramMeta[index]?.toClass) {
             return meta.paramMeta[index].toClass!(param, context);
         }
         return deserialize(param, context)
@@ -38,7 +39,7 @@ async function deserializeObject(obj: ISerialized, context: SerializableContext)
             const fieldMeta = meta?.getFieldMeta(key);
             if (fieldMeta?.toClass) {
                 instance[key] = await fieldMeta.toClass(obj.data![key], context);
-            }else {
+            } else {
                 instance[key] = await deserialize(obj.data![key], context);
             }
         }
@@ -71,7 +72,7 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
             throw new Error(`Cannot find the type ${obj.typename}, did you forget to register it?`);
         }
         const meta = SerializableContext.getMeta(obj.typename);
-        const params =  await deserializeParams(obj.param, context, meta);
+        const params = await deserializeParams(obj.param, context, meta);
         const instance = new type(...params);
         context.add(instance, obj.id);
         if (obj.data) {
@@ -82,7 +83,7 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
                 const fieldMeta = meta?.getFieldMeta(key);
                 if (fieldMeta?.toClass) {
                     instance[key] = await fieldMeta.toClass(obj.data![key], context);
-                }else {
+                } else {
                     instance[key] = await deserialize(obj.data![key], context);
                 }
             }
@@ -128,23 +129,53 @@ function deserializeRef(obj: ISerializedRef, context: SerializableContext) {
 }
 
 export async function deserialize<T>(obj: any, context: SerializableContext = new SerializableContext()): Promise<T> {
+    let root = false;
+    if (!context.loading) {
+        context.total = calculateDeserializableTotalItems(obj, context);
+        context.loading = true;
+        root = true;
+        context.lastTick = Date.now();
+        if (context.onStart)
+            context.onStart(context.total, obj);
+    }
+
+    let output: Promise<T> | T;
     switch (typeof obj) {
         case 'object':
             const deserializable: IDeserializable = obj;
             if (!deserializable.id) return obj;
-            if (!(deserializable as ISerialized).typename)
-                return deserializeRef(obj, context);
+            if (!(deserializable as ISerialized).typename) {
+                output = deserializeRef(obj, context);
+                break;
+            }
             if ((deserializable as ISerializedFunction).typename === 'Function') {
-                return deserializeFunction(obj, context) as T;
+                output = deserializeFunction(obj, context) as Promise<T>;
+                break;
             }
             const serialized: ISerialized = obj;
             if (serialized.array) {
-                return deserializeArray(serialized, context) as T;
+                output = deserializeArray(serialized, context) as Promise<T>;
+                break;
             } else {
-                return deserializeObject(serialized, context);
+                const now = Date.now();
+                if (now - context.lastTick > context.interval) {
+                    if (context.onProgress)
+                        context.onProgress(context.processed, context.total, obj);
+                    context.lastTick = now;
+                }
+                output = deserializeObject(serialized, context);
+                break;
             }
         default:
-            return obj;
+            context.processed += 1;
+            output = obj;
+            break;
     }
 
+    await output;
+    if (root && context.onFinish) {
+        context.onFinish();
+        context.loading = false;
+    }
+    return output;
 }

@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 import { ClassConstructor } from "./serializable-object";
 import { SerializableMeta } from "./serializable-meta";
-
+import { SerializableEvent } from "./serializable-event";
 
 export interface ISerializableContextOptions {
     parent: any;
@@ -9,9 +9,26 @@ export interface ISerializableContextOptions {
     extras: {
         [key: string]: any;
     };
+    /**
+     * The interval in milliseconds to call the onProgress
+     * @default 100
+    **/
+    interval: number;
+    onStart: (total: number, item: any) => void;
+    onProgress: (processed: number, total: number, item: any) => void;
+    onFinish: () => void;
 }
 
 export class SerializableContext {
+    onStart?: (total: number, item: any) => void;
+    onProgress?: (processed: number, total: number, item: any) => void;
+    onFinish?: () => void;
+    loading: boolean = false;
+    total: number = 0;
+    processed: number = 0;
+    lastTick: number = 0;
+    interval: number = 100;
+
     static readonly registry: Map<string, SerializableMeta<any>> = new Map();
     static getType(name: string) {
         return this.registry.get(name)?.type;
@@ -49,6 +66,13 @@ export class SerializableContext {
             for (const key in options.extras) {
                 this.objectContainer.set(key, options.extras[key]);
             }
+        this.interval = options.interval ?? 100;
+        if(options.onStart)
+            this.onStart = options.onStart;
+        if(options.onProgress)
+            this.onProgress = options.onProgress;
+        if(options.onFinish)
+            this.onFinish = options.onFinish;
     }
 
     hasKey(key: string): boolean {
