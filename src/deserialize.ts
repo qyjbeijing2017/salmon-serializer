@@ -1,7 +1,7 @@
 import { calculateDeserializableTotalItems } from "./progress";
 import { SerializableContext } from "./serializable-context";
 import { SerializableMeta, SerializableMode } from "./serializable-meta";
-import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef, SerializableType } from "./serializable-object";
+import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } from "./serializable-object";
 
 async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any> | undefined) {
     if (params === undefined) return [];
