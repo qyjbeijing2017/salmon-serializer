@@ -1,11 +1,13 @@
 import { SerializableContext } from "../serializable-context";
 import { SerializableMode } from "../serializable-meta";
-import { ClassConstructor } from "../serializable-object";
+import { ClassConstructor, SerializableDataType } from "../serializable-object";
 
 export interface SerializableOptions {
     mode: SerializableMode;
     toClass?: (value: any, context: SerializableContext) => Promise<any> | any;
     toPlain?: (value: any, context: SerializableContext) => Promise<any> | any;
+    onSerialized?: (instance: SerializableDataType, context: SerializableContext) => Promise<void> | void;
+    onDeserialized?: (instance: any, context: SerializableContext) => Promise<void> | void;
 }
 
 export function Serializable<T extends ClassConstructor<any>>(options: Partial<SerializableOptions> = {}) {
@@ -17,5 +19,7 @@ export function Serializable<T extends ClassConstructor<any>>(options: Partial<S
         }
         meta.toPlain = options.toPlain;
         meta.toClass = options.toClass;
+        meta.onSerialized = options.onSerialized;
+        meta.onDeserialized = options.onDeserialized;
     }
 }

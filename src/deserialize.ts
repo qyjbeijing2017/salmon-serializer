@@ -6,10 +6,17 @@ import { IDeserializable, ISerialized, ISerializedFunction, ISerializedRef } fro
 async function deserializeParams(params: any[] | undefined, context: SerializableContext, meta: SerializableMeta<any>| SerializableFieldMeta | undefined) {
     if (params === undefined) return [];
     return await Promise.all(params.map(async (param, index) => {
-        if (meta?.paramMeta[index]?.toClass) {
-            return meta.paramMeta[index].toClass!(param, context);
+        const paramMeta = meta?.paramMeta[index];
+        let value: any;
+        if (paramMeta?.toClass) {
+            value = await paramMeta.toClass!(param, context);
+        } else {
+            value = await deserialize(param, context);
         }
-        return deserialize(param, context)
+        if(paramMeta?.onDeserialized) {
+            await paramMeta.onDeserialized(value, context);
+        }
+        return value;
     }));
 }
 
@@ -41,6 +48,16 @@ async function deserializeObject(obj: ISerialized, context: SerializableContext)
                 instance[key] = await fieldMeta.toClass(obj.data![key], context);
             } else {
                 instance[key] = await deserialize(obj.data![key], context);
+            }
+            if(fieldMeta?.onDeserialized) {
+                await fieldMeta.onDeserialized(instance[key], context);
+            }
+        }
+        if(meta?.onDeserialized) {
+            if(typeof meta.onDeserialized === 'function') {
+                await meta.onDeserialized(instance, context);
+            } else {
+                await instance[meta.onDeserialized](context);
             }
         }
         return instance;
@@ -86,6 +103,10 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
                 } else {
                     instance[key] = await deserialize(obj.data![key], context);
                 }
+                
+                if(fieldMeta?.onDeserialized) {
+                    await fieldMeta.onDeserialized(instance[key], context);
+                }
             }
         }
 
@@ -93,6 +114,14 @@ async function deserializeArray(obj: ISerialized, context: SerializableContext):
             context.parentKey = index;
             instance[index] = deserialize(item, context);
         }))
+
+        if(meta?.onDeserialized) {
+            if(typeof meta.onDeserialized === 'function') {
+                await meta.onDeserialized(instance, context);
+            } else {
+                await instance[meta.onDeserialized](context);
+            }
+        }
 
         return instance;
     }

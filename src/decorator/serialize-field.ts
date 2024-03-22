@@ -1,10 +1,13 @@
 import { SerializableContext } from "../serializable-context";
 import { SerializableFieldType, SerializableMode } from "../serializable-meta";
+import { SerializableDataType } from "../serializable-object";
 
 export interface SerializableFieldOptions {
     mode: SerializableMode;
     toPlain: (param: any, context: SerializableContext) => Promise<any> | any;
     toClass: (param: any, context: SerializableContext) => Promise<any> | any;
+    onSerialized: (instance: SerializableDataType, context: SerializableContext) => Promise<void> | void;
+    onDeserialized?: (instance: any, context: SerializableContext) => Promise<void> | void;
 }
 
 export function SerializeField<T>(options: Partial<SerializableFieldOptions> = {}) {
@@ -29,5 +32,7 @@ export function SerializeField<T>(options: Partial<SerializableFieldOptions> = {
         }
         fieldMeta.toPlain = options.toPlain;
         fieldMeta.toClass = options.toClass;
+        fieldMeta.onSerialized = options.onSerialized;
+        fieldMeta.onDeserialized = options.onDeserialized;
     }
 }

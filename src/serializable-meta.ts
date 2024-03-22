@@ -28,12 +28,16 @@ export class SerializableFieldMeta {
     paramMeta: SerializableParamMeta<any>[] = [];
     toClass?: (value: any, context: SerializableContext) => Promise<any> | any;
     toPlain?: (value: any, context: SerializableContext) => Promise<any> | any;
+    onSerialized?: (instance: SerializableDataType, context: SerializableContext) => Promise<void> | void;
+    onDeserialized?: (instance: any, context: SerializableContext) => Promise<void> | void;
 }
 
 export class SerializableParamMeta<T>{
     readonly findDefault: T | ((context: SerializableContext) => T);
     toClass?: (value: any, context: SerializableContext) => Promise<T> | T;
     toPlain?: (value: T, context: SerializableContext) => Promise<any> | any;
+    onSerialized?: (instance: SerializableDataType, context: SerializableContext) => Promise<void> | void;
+    onDeserialized?: (instance: T, context: SerializableContext) => Promise<void> | void;
     constructor(findDefault: T | ((context: SerializableContext) => T)) {
         this.findDefault = findDefault;
     }
@@ -46,7 +50,8 @@ export class SerializableMeta<T extends Object> {
     paramMeta: SerializableParamMeta<any>[] = [];
     toClass?: (value: any, context: SerializableContext) => Promise<T> | T;
     toPlain?: (value: T, context: SerializableContext) => Promise<any> | any;
-
+    onSerialized?: symbol | string | ((instance: SerializableDataType, context: SerializableContext) => Promise<void> | void);
+    onDeserialized?: symbol | string | ((instance: T, context: SerializableContext) => Promise<void> | void);
     ensureFieldMeta(key: string) {
         let meta = this.keysMeta.get(key);
         if (!meta) {

@@ -19,7 +19,11 @@ async function serializeParam<T extends Object>(meta: SerializableMeta<T> | unde
             const serialized = await serialize(value, context);
             output.push(serialized);
         }
+        if(param.onSerialized) {
+            await param.onSerialized(value, context);
+        }
     }
+
     return output;
 }
 
@@ -27,8 +31,8 @@ async function serializeArrayInstance(obj: Array<any>, context: SerializableCont
     const meta = obj.constructor ? SerializableContext.getMeta(obj.constructor.name) : undefined;
     const [id] = context.add(obj, (obj as any).id);
 
-    if(meta && meta.toClass) {
-        return meta.toClass(obj, context);
+    if(meta && meta.toPlain) {
+        return meta.toPlain(obj, context);
     }
 
     context.instance = obj;
@@ -43,15 +47,17 @@ async function serializeArrayInstance(obj: Array<any>, context: SerializableCont
     const keys = meta ? meta.getSerializableKeys(obj) : Object.keys(obj);
     context.parent = obj;
     for (const key of keys) {
+        const fieldMeta = meta?.getFieldMeta(key);
         if (index < obj.length) {
             if (!array) array = [];
             context.parentKey = index;
-
-            const fieldMeta = meta?.getFieldMeta(key);
             if (fieldMeta?.toPlain) {
                 array[index] = await fieldMeta.toPlain(obj[index], context);
             } else {
                 array[index] = await serialize(obj[index], context);
+            }
+            if(fieldMeta?.onSerialized) {
+                await fieldMeta.onSerialized(array[index], context);
             }
             index++;
             continue;
@@ -59,22 +65,34 @@ async function serializeArrayInstance(obj: Array<any>, context: SerializableCont
         context.parentKey = key;
         if (!data) data = {};
         data[key] = await serialize((obj as any)[key], context);
+        if(fieldMeta?.onSerialized) {
+            await fieldMeta.onSerialized(data[key], context);
+        }
     }
-    return {
+
+    let output = {
         id,
         typename: obj.constructor ? obj.constructor.name : 'Array',
         data,
-        array: array,
+        array,
         param,
     };
+    if(meta?.onSerialized) {
+        if(typeof meta.onSerialized === 'function') {
+            await meta.onSerialized(output, context);
+        } else {
+            await (obj as any)[meta.onSerialized](output, context);
+        }
+    }
+    return output;
 }
 
 async function serializeObject(obj: any, context: SerializableContext): Promise<ISerialized> {
     const meta = obj.constructor ? SerializableContext.getMeta(obj.constructor.name) : undefined;
     const [id] = context.add(obj, obj.id);
 
-    if(meta && meta.toClass) {
-        return meta.toClass(obj, context);
+    if(meta && meta.toPlain) {
+        return meta.toPlain(obj, context);
     }
 
     let param: IDeserializable[] | undefined = undefined;
@@ -94,13 +112,27 @@ async function serializeObject(obj: any, context: SerializableContext): Promise<
         } else {
             data[key] = await serialize(obj[key], context);
         }
+        if(fieldMeta?.onSerialized) {
+            await fieldMeta.onSerialized(data[key], context);
+        }
     }
-    return {
+
+    let output = {
         id,
         typename: obj.constructor ? obj.constructor.name : 'Object',
         data,
         param,
+    };
+
+    if(meta?.onSerialized) {
+        if(typeof meta.onSerialized === 'function') {
+            await meta.onSerialized(output, context);
+        } else {
+            await (obj as any)[meta.onSerialized](output, context);
+        }
     }
+
+    return output;
 }
 
 function serializeRef(obj: any, context: SerializableContext): ISerializedRef {
@@ -166,6 +198,10 @@ async function serializeFunction(obj: Function, context: SerializableContext): P
         } else {
             output.body = '';
         }
+    }
+
+    if(metaField?.onSerialized) {
+        await metaField.onSerialized(output, context);
     }
 
     if (metaField?.mode && metaField?.mode & SerializableMode.RUN_ON_SERIALIZE) {

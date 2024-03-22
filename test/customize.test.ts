@@ -134,4 +134,113 @@ describe('customize', () => {
 
         expect(instanceUnderTest.id).toBe('test customized');
     })
+
+    test('class serialized', async () => {
+        @Serializable({
+            toPlain: async (target, context) => {
+                return `customized class`;
+            }
+        })
+        class ClassUnderTest { }
+
+        @Serializable({
+            toPlain: async (target, context) => {
+                return `customized class`;
+            }
+        })
+        class ArrayUnderTest extends Array<number> { }
+
+        const instanceUnderTest = new ClassUnderTest();
+        const arrayUnderTest = new ArrayUnderTest();
+
+        const serialized = await serialize(instanceUnderTest);
+        const arraySerialized = await serialize(arrayUnderTest);
+
+        expect(serialized).toBe('customized class');
+        expect(arraySerialized).toBe('customized class');
+    });
+
+    test('serialized', async () => {
+        const classUnderTest = jest.fn((instance, context)=>{});
+        const fieldUnderTest = jest.fn((instance, context)=>{});
+        const paramUnderTest = jest.fn((instance, context)=>{});
+        @Serializable({
+            onSerialized: classUnderTest
+        })
+        class ClassUnderTest {
+            @Ignore()
+            id = 'test';
+            @SerializeField({
+                onSerialized: fieldUnderTest
+            })
+            name = 'testField';
+
+            constructor(
+                @SerializeParam('testParam', {
+                    onSerialized: paramUnderTest
+                }) param: string
+            ) {}
+        }
+        const serializedUnderTest: ISerialized = {
+            id: 'test',
+            typename: 'ClassUnderTest',
+            param: ['testParam'],
+            data: {
+                name: 'testField'
+            }
+        };
+        const instanceUnderTest = new ClassUnderTest('test');
+
+
+        await serialize(instanceUnderTest);
+
+        expect(classUnderTest.mock.calls).toHaveLength(1);
+        expect(classUnderTest.mock.calls[0][0]).toEqual(serializedUnderTest);
+        expect(fieldUnderTest.mock.calls).toHaveLength(1);
+        expect(fieldUnderTest.mock.calls[0][0]).toEqual('testField');
+        expect(paramUnderTest.mock.calls).toHaveLength(1);
+        expect(paramUnderTest.mock.calls[0][0]).toEqual('testParam');
+    });
+
+    test('deserialized', async () => {
+        const classUnderTest = jest.fn((instance, context)=>{});
+        const fieldUnderTest = jest.fn((instance, context)=>{});
+        const paramUnderTest = jest.fn((instance, context)=>{});
+        @Serializable({
+            onDeserialized: classUnderTest
+        })
+        class ClassUnderTest {
+            @Ignore()
+            id = 'test';
+            @SerializeField({
+                onDeserialized: fieldUnderTest
+            })
+            name = 'testField';
+
+            constructor(
+                @SerializeParam('testParam', {
+                    onDeserialized: paramUnderTest
+                }) param: string
+            ) {}
+        }
+        const serializedUnderTest: ISerialized = {
+            id: 'test',
+            typename: 'ClassUnderTest',
+            param: ['testParam'],
+            data: {
+                name: 'testField'
+            }
+        };
+        const instanceUnderTest = new ClassUnderTest('testParam');
+
+        await deserialize<ClassUnderTest>(serializedUnderTest);
+
+        expect(classUnderTest.mock.calls).toHaveLength(1);
+        expect(classUnderTest.mock.calls[0][0]).toEqual(instanceUnderTest);
+        expect(fieldUnderTest.mock.calls).toHaveLength(1);
+        expect(fieldUnderTest.mock.calls[0][0]).toEqual('testField');
+        expect(paramUnderTest.mock.calls).toHaveLength(1);
+        expect(paramUnderTest.mock.calls[0][0]).toEqual('testParam');
+
+    });
 });
