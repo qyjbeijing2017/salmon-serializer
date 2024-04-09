@@ -1,9 +1,18 @@
 {
-  "name": "salmon-serialization",
+  "name": "salmon-serializer",
   "version": "1.0.0",
-  "description": "this is the serialization part of salmon",
+  "description": "this is the serializer of javascript",
   "main": "/src/index.ts",
-  "repository": "https://",
+  "homepage": "https://github.com/qyjbeijing2017/salmon-serializer.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qyjbeijing2017/salmon-serializer.git"
+  },
+  "keywords": [
+    "serialization",
+    "deserialization",
+    "typescript"
+  ],
   "author": "Jacson Qiu",
   "license": "MIT",
   "scripts": {

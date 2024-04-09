@@ -29,8 +29,8 @@ describe('context', () => {
         num5: number = 6;
         ref: ClassUnderTest
         constructor(
-            @SerializeParam(ctx => ctx.instance.ref) ref: ClassUnderTest,
-            @SerializeParam(ctx => ctx.instance.id) id: string = 'class2',
+            @SerializeParam((ctx: SerializableContext) => ctx.instance.ref) ref: ClassUnderTest,
+            @SerializeParam((ctx: SerializableContext) => ctx.instance.id) id: string = 'class2',
         ) {
             this.id = id;
             this.ref = ref;
